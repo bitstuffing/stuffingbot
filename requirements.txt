@@ -1,0 +1,4 @@
+telepot
+cfscrape
+requests
+alfa-addon engine (needs script or installer)

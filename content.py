@@ -6,7 +6,10 @@ import time
 import os
 import subprocess #syscalls
 from pytg import Telegram
-from config import Config
+from bot.core.config import Config
+from bot.providers.exvagos import Exvagos
+from bot.providers.witai import Witai
+from google_speech import Speech
 
 session = requests.session()
 scraper = cfscrape.create_scraper(sess=session)
@@ -20,25 +23,32 @@ BOT_NAME = config["BOT_NAME"]
 class Content():
 
     @staticmethod
-    def manageText(text):
+    def manageText(text,bot,chatId):
         #get command/s
         if " " in text:
             params = text.split(" ")
             #continue analysing commands
-            switcher = {
-                "hola" : Content.greetings
-            }
-            func = switcher.get(params[0], lambda: "Invalid argument")
-            text = func()
-            if text == "Invalid argument" and len(params)>1:
-                command = params[0]
-                if "decode" == command:
-                    text = Content.decodeWithImportedEngine(targetUrl=params[1])
+
+            command = params[0]
+            if "decode" == command and len(params)>1:
+                text = Content.decodeWithImportedEngine(targetUrl=params[1])
+            elif "exvagos" == command and len(params)>1:
+                text = Content.getExvagos(params)
+            elif "habla" == command and len(params)>1:
+                text = Content.speech(params,bot,chatId)
+            else:
+                logger.debug("random text %s"%text)
+                text = Witai.query(text)
         return text
 
     @staticmethod
-    def greetings():
-        return "hola"
+    def getExvagos(params):
+        entries = Exvagos.getSection(params[1])
+        text = ""
+        for entry in entries:
+            logger.debug(entry["title"])
+            text+=entry["title"]+"\n"
+        return text
 
     @staticmethod
     def decodeWithImportedEngine(targetUrl):
@@ -114,3 +124,15 @@ class Content():
             bot.sendMessage(chatId,"uploading with bot... %s MB sized"% str(size))
             bot.sendChatAction(chatId, 'upload_video')
             bot.sendVideo(chatId,open(DOWNLOAD_PATH+videoFile,'rb'))
+
+    @staticmethod
+    def speech(params,bot,chatId):
+        text = " ".join(params[1:])
+        speech = Speech(text, lang='es')
+        audioFile = "audio_"+str(time.time())+".mp3"
+        bashCommand = '(sleep 1;echo "dialog_list";sleep 2; echo "send_file %s \'%s\'") | %s -W -v -k server.pub' % (BOT_NAME,DOWNLOAD_PATH+audioFile,TELEGRAM_CLI)
+        speech.save(DOWNLOAD_PATH+audioFile)
+        return_code = subprocess.call(bashCommand,shell=True) #launch the command and shows output in main console (sync)
+        bot.sendMessage(chatId,"upload has finished")
+        os.remove(DOWNLOAD_PATH+audioFile)
+        return text

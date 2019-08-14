@@ -7,7 +7,7 @@ from content import Content
 import time
 import os
 import logger
-from config import Config
+from bot.core.config import Config
 
 TOKEN = Config.getConfig()["TOKEN"]
 
@@ -25,7 +25,7 @@ class MessageCounter(telepot.helper.ChatHandler):
         chatId = msg["chat"]["id"]
         if "text" in msg:
             try:
-                text = Content.manageText(msg["text"])
+                text = Content.manageText(msg["text"],bot,chatId)
                 if ".mp4" in text: #could be a decoded line, needs a download
                     Content.downloadVideo(chatId,text,bot)
             except Exception as e:

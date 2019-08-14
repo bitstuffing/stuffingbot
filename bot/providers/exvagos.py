@@ -24,9 +24,12 @@ class Exvagos():
         for field in table.split('<td class="alt2" align="center" valign="middle">'):
             if i>0:
                 element = {}
-                title = Decoder.extract('style="color:navy;">','</a>',field)
+                if 'style="color:navy;">' in field:
+                    title = Decoder.extract('style="color:navy;">','</a>',field)
+                else:
+                    title = Decoder.extract('style="color:;">','</a>',field)
                 link = Exvagos.MAIN+'showthread.php?t='+Decoder.extract('a href="showthread.php?t=','"',field)
-                element["title"] = title
+                element["title"] = str(title.encode('utf-8','ignore'))
                 element["link"] = link
                 elements.append(element)
             i+=1

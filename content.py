@@ -10,6 +10,7 @@ from bot.core.config import Config
 from bot.providers.exvagos import Exvagos
 from bot.providers.witai import Witai
 from google_speech import Speech
+from bot.core.torrent import Torrent
 
 session = requests.session()
 scraper = cfscrape.create_scraper(sess=session)
@@ -36,10 +37,87 @@ class Content():
                 text = Content.getExvagos(params)
             elif "habla" == command and len(params)>1:
                 text = Content.speech(params,bot,chatId)
+            elif "torrent" == command and len(params)>1:
+                if '.torrent' in params[1] or 'magnet:' in params[1]:
+                    text = str(Content.downloadTorrent(params,bot,chatId))
+                else:
+                    command = params[1]
+                    id = None
+                    if len(params)>2:
+                        id = params[2]
+                    if command=="delete":
+                        text = Content.deleteTorrent(id,delete=True)
+                    elif command == "remove":
+                        text = Content.deleteTorrent(id,delete=False)
+                    elif command == "pause":
+                        text = Content.pauseTorrent(id)
+                    elif command=="resume":
+                        text = Content.resumeTorrent(id)
+                    elif command == "status":
+                        text = Content.status(id)
             else:
                 logger.debug("random text %s"%text)
                 text = Witai.query(text)
         return text
+
+    @staticmethod
+    def deleteTorrent(id,delete=False):
+        torrent = Torrent()
+        status = torrent.delete(id,delete)
+        return str(status)
+
+    @staticmethod
+    def pauseTorrent(id):
+        torrent = Torrent()
+        status = torrent.pause(id)
+        return str(status)
+
+    @staticmethod
+    def resumeTorrent(id):
+        torrent = Torrent()
+        status = torrent.resume(id)
+        return str(status)
+
+    @staticmethod
+    def status(id=None):
+        torrent = Torrent()
+        list = []
+        if id is not None:
+            status = torrent.status(id)
+            list.append(status)
+        else:
+            list = torrent.allStatus()
+        message = ""
+        for status in list:
+            logger.debug(str(dir(status)))
+            seeders = 0
+            try:
+                seeders = status.seeders
+            except:
+                pass
+            percent = 0
+            try:
+                percent = status.percentDone
+            except:
+                pass
+            if status.totalSize>1073741824:
+                size = "{0:.2f} GB".format(status.totalSize/1073741824)
+            elif status.totalSize>1048576:
+                size = "{0:.2f} MB".format(status.totalSize/1048576)
+            elif status.totalSize>1024:
+                size = "{0:.2f} KB".format(status.totalSize/1024)
+            else:
+                size = status.totalSize
+            message += "%s :: %.0f%% P: %s S: %s Size: %s :T: %s \n"%(status.id,(percent*100),len(status.peers),seeders,size,status.name)
+        return message
+
+    @staticmethod
+    def downloadTorrent(params,bot,chatId):
+        torrentUrl = params[1]
+        torrent = Torrent()
+        status = torrent.add(torrentUrl)
+        bot.sendMessage(chatId,"torrent %s with id %s."%(status.name,status.id))
+        return status.id
 
     @staticmethod
     def getExvagos(params):

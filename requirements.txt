@@ -2,4 +2,4 @@ telepot
 cfscrape
 requests
 js2py
-
+transmissionrpc

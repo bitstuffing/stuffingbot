@@ -2,6 +2,7 @@ import requests
 from alfa.lib import cloudscraper
 import logger
 from bot.core.decoder import Decoder
+import re
 
 class Exvagos():
 
@@ -29,7 +30,7 @@ class Exvagos():
                 else:
                     title = Decoder.extract('style="color:;">','</a>',field)
                 link = Exvagos.MAIN+'showthread.php?t='+Decoder.extract('a href="showthread.php?t=','"',field)
-                element["title"] = str(title.encode('utf-8','ignore'))
+                element["title"] = re.sub(r'\W+', ' ', title)#str(title.encode('utf-8','ignore'))
                 element["link"] = link
                 elements.append(element)
             i+=1

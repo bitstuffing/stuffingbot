@@ -1,0 +1,14 @@
+{
+    "BOT_NAME":"stuffingbot",
+    "TELEGRAM_CLI":"/home/pi/tg/bin/telegram-cli",
+    "HTTP_URI":"http://localhost/",
+    "DOWNLOAD_PATH":"/tmp/",
+    "TOKEN":"",
+    "TOKEN_WITAI":"",
+    "IBM_SPEECH_KEY":"",
+    "TRANSMISSION_HOST":"localhost",
+    "TRANSMISSION_USER":"transmission",
+    "TRANSMISSION_PORT":"9091",
+    "TRANSMISSION_PASS":"transmission",
+    "DOWNLOAD_SPEECH":"False"
+}

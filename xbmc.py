@@ -1,3 +1,8 @@
+LOGERROR = "error"
+
+def log(value='',level=''):
+	return 'value'
+
 def translatePath(value):
 	return 'alfa'
 

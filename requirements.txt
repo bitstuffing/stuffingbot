@@ -1,7 +1,7 @@
-telepot
+python-telegram-bot
 cfscrape
 requests
 js2py
 transmissionrpc
-google_speech
+#google_speech
 pytg

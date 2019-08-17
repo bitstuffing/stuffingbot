@@ -44,6 +44,6 @@ class KickAssTorrent():
 
     @staticmethod
     def search(term):
-        searchUrl = KickAssTorrent.SEARCH % urllib.parse.quote(term)
+        searchUrl = KickAssTorrent.SEARCH % urllib.quote_plus(term)
         html = KickAssTorrent.getPage(searchUrl)
         return KickAssTorrent.getLinksFromHtml(html)

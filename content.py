@@ -9,9 +9,10 @@ from pytg import Telegram
 from bot.core.config import Config
 from bot.providers.exvagos import Exvagos
 from bot.providers.witai import Witai
-from google_speech import Speech
+#from google_speech import Speech #has been ported to python2 and appended
 from bot.core.torrent import Torrent
 from bot.providers.kat import KickAssTorrent
+import urllib
 
 session = requests.session()
 scraper = cfscrape.create_scraper(sess=session)
@@ -21,49 +22,15 @@ DOWNLOAD_PATH = config["DOWNLOAD_PATH"]
 HTTP_URI = config["HTTP_URI"]
 TELEGRAM_CLI = config["TELEGRAM_CLI"]
 BOT_NAME = config["BOT_NAME"]
+DOWNLOAD_SPEECH = eval(config["DOWNLOAD_SPEECH"])
+
+HEADERS = {
+    'User-Agent' : 'Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0',
+    'Accept' : '*/*',
+    'Accept-Language' : 'es-ES,es;q=0.5'
+}
 
 class Content():
-
-    @staticmethod
-    def manageText(text,bot,chatId):
-        #get command/s
-        if " " in text:
-            params = text.split(" ")
-            #continue analysing commands
-
-            command = params[0]
-            if "decode" == command and len(params)>1:
-                text = Content.decodeWithImportedEngine(targetUrl=params[1])
-            elif "exvagos" == command and len(params)>1:
-                text = Content.getExvagos(params)
-            elif "habla" == command and len(params)>1:
-                text = Content.speech(params,bot,chatId)
-            elif "torrent" == command and len(params)>1:
-                if '.torrent' in params[1] or 'magnet:' in params[1]:
-                    text = str(Content.downloadTorrent(params,bot,chatId))
-                else:
-                    command = params[1]
-                    id = None
-                    if len(params)>2:
-                        id = params[2]
-                    if command=="delete":
-                        text = Content.deleteTorrent(id,delete=True)
-                    elif command == "remove":
-                        text = Content.deleteTorrent(id,delete=False)
-                    elif command == "pause":
-                        text = Content.pauseTorrent(id)
-                    elif command=="resume":
-                        text = Content.resumeTorrent(id)
-                    elif command == "status":
-                        text = Content.status(id)
-            elif "search" == command and len(params)>1:
-                provider = params[1]
-                if provider == 'kat':
-                    text = Content.searchKat(params,bot,chatId)
-            else:
-                logger.debug("random text %s"%text)
-                text = Witai.query(text)
-        return text
 
     @staticmethod
     def searchKat(params,bot,chatId):
@@ -131,7 +98,7 @@ class Content():
         torrentUrl = params[1]
         torrent = Torrent()
         status = torrent.add(torrentUrl)
-        bot.sendMessage(chatId,"torrent %s with id %s."%(status.name,status.id))
+        bot.sendMessage(chat_id=chatId,text="torrent %s with id %s."%(status.name,status.id))
         return status.id
 
     @staticmethod
@@ -151,7 +118,7 @@ class Content():
         logger.debug("finished import!")
         finalLink = ""
         links = []
-        if str(len(targetUrl)) > 0:
+        if len(str(targetUrl)) > 0:
             for serverid in get_servers_list().keys():
                 server_parameters = get_server_parameters(serverid)
                 for pattern in server_parameters.get("find_videos", {}).get("patterns", []):
@@ -194,7 +161,7 @@ class Content():
             key = header[:header.find("=")]
             value = header[header.find("=")+1]
             headers[key] = value
-        bot.sendMessage(chatId,"downloading...")
+        bot.sendMessage(chat_id=chatId,text="downloading...")
         logger.debug("downloading with headers: %s"%str(headers))
         r = requests.get(url=url,headers=headers,stream=True)
         videoFile = "video_"+str(time.time())+".mp4"
@@ -205,27 +172,43 @@ class Content():
         size = os.path.getsize(DOWNLOAD_PATH+videoFile)
         size = long(size)/1024/1024
         if size>50:
-            bot.sendMessage(chatId,"not uploading video with bot, is too big (limited to 50 MB) %s MB sized, access with next url:"% str(size))
-            bot.sendMessage(chatId,"%s%s"%(HTTP_URI,videoFile))
-            bot.sendMessage(chatId,"uploading with telegram-cli... %s" % (DOWNLOAD_PATH+videoFile))
+            bot.sendMessage(chat_id=chatId,text="not uploading video with bot, is too big (limited to 50 MB) %s MB sized, access with next url:"% str(size))
+            bot.sendMessage(chat_id=chatId,text="%s%s"%(HTTP_URI,videoFile))
+            bot.sendMessage(chat_id=chatId,text="uploading with telegram-cli... %s" % (DOWNLOAD_PATH+videoFile))
             bashCommand = '(sleep 1;echo "dialog_list";sleep 2; echo "send_file %s \'%s\'") | %s -W -v -k server.pub' % (BOT_NAME,DOWNLOAD_PATH+videoFile,TELEGRAM_CLI)
-            bot.sendMessage(chatId,bashCommand)
+            bot.sendMessage(chat_id=chatId,text=bashCommand)
             #os.popen(bashCommand).read() #launch the command quiet (sync)
             return_code = subprocess.call(bashCommand,shell=True) #launch the command and shows output in main console (sync)
-            bot.sendMessage(chatId,"upload has finished")
+            bot.sendMessage(chat_id=chatId,text="upload has finished")
         else:
-            bot.sendMessage(chatId,"uploading with bot... %s MB sized"% str(size))
-            bot.sendChatAction(chatId, 'upload_video')
-            bot.sendVideo(chatId,open(DOWNLOAD_PATH+videoFile,'rb'))
+            bot.sendMessage(chat_id=chatId,text="uploading with bot... %s MB sized"% str(size))
+            #bot.sendChatAction(chatId, 'upload_video')
+            #bot.sendVideo(chatId,open(DOWNLOAD_PATH+videoFile,'rb'))
 
     @staticmethod
-    def speech(params,bot,chatId):
+    def speech(params,bot,chatId,lang='es'):
         text = " ".join(params[1:])
-        speech = Speech(text, lang='es')
+        #speech = Speech(text, lang=lang)
         audioFile = "audio_"+str(time.time())+".mp3"
         bashCommand = '(sleep 1;echo "dialog_list";sleep 2; echo "send_file %s \'%s\'") | %s -W -v -k server.pub' % (BOT_NAME,DOWNLOAD_PATH+audioFile,TELEGRAM_CLI)
-        speech.save(DOWNLOAD_PATH+audioFile)
-        return_code = subprocess.call(bashCommand,shell=True) #launch the command and shows output in main console (sync)
-        bot.sendMessage(chatId,"upload has finished")
-        os.remove(DOWNLOAD_PATH+audioFile)
+        #logger.debug("self url: %s"%str(dir(speech)))
+        #speech.save(DOWNLOAD_PATH+audioFile)
+        logger.debug(str(dir(urllib)))
+        urlText = urllib.quote_plus(text)
+        url = 'https://translate.google.com/translate_tts?client=tw-ob&ie=UTF-8&idx=0&total=1&textlen=%s&tl=%s&q=%s'%(len(text),lang,urlText)
+        if DOWNLOAD_SPEECH:
+            logger.debug("url: '%s'"%url)
+            headers = {}
+            r = requests.get(url=url,headers=HEADERS,stream=True)
+            filePath = DOWNLOAD_PATH+audioFile
+            with open(filePath, 'wb') as fd:
+                for chunk in r.iter_content(chunk_size=128):
+                    fd.write(chunk)
+            return_code = subprocess.call(bashCommand,shell=True) #launch the command and shows output in main console (sync)
+        try:
+            bot.sendAudio(chat_id=chatId,audio=url,title=text,caption=text)
+        except Exception as ex:
+            logger.error(str(ex))
+        if DOWNLOAD_SPEECH:
+            os.remove(DOWNLOAD_PATH+audioFile)
         return text

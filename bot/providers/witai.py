@@ -22,7 +22,7 @@ class Witai():
 
     @staticmethod
     def query(text):
-        query = urllib.parse.quote(text)
+        query = urllib.quote_plus(text)
         logger.debug("query: %s" % query)
         response = requests.get(url=Witai.API+query,headers=Witai.HEADERS)
         logger.debug(response.text)

@@ -190,7 +190,6 @@ class Content():
         text = " ".join(params[1:])
         #speech = Speech(text, lang=lang)
         audioFile = "audio_"+str(time.time())+".mp3"
-        bashCommand = '(sleep 1;echo "dialog_list";sleep 2; echo "send_file %s \'%s\'") | %s -W -v -k server.pub' % (BOT_NAME,DOWNLOAD_PATH+audioFile,TELEGRAM_CLI)
         #logger.debug("self url: %s"%str(dir(speech)))
         #speech.save(DOWNLOAD_PATH+audioFile)
         logger.debug(str(dir(urllib)))
@@ -204,11 +203,21 @@ class Content():
             with open(filePath, 'wb') as fd:
                 for chunk in r.iter_content(chunk_size=128):
                     fd.write(chunk)
-            return_code = subprocess.call(bashCommand,shell=True) #launch the command and shows output in main console (sync)
-        try:
-            bot.sendAudio(chat_id=chatId,audio=url,title=text,caption=text)
-        except Exception as ex:
-            logger.error(str(ex))
+            size = os.path.getsize(DOWNLOAD_PATH+videoFile)
+            size = long(size)/1024/1024
+            if size>50:
+                bashCommand = '(sleep 1;echo "dialog_list";sleep 2; echo "send_file %s \'%s\'") | %s -W -v -k server.pub' % (BOT_NAME,DOWNLOAD_PATH+audioFile,TELEGRAM_CLI)
+                return_code = subprocess.call(bashCommand,shell=True) #launch the command and shows output in main console (sync)
+            else:
+                try:
+                    bot.sendAudio(chat_id=chatId,audio=file(DOWNLOAD_PATH+videoFile,'rb'),title=text,caption=text)
+                except Exception as ex:
+                    logger.error(str(ex))
+        else:
+            try:
+                bot.sendAudio(chat_id=chatId,audio=url,title=text,caption=text)
+            except Exception as ex:
+                logger.error(str(ex))
         if DOWNLOAD_SPEECH:
             os.remove(DOWNLOAD_PATH+audioFile)
         return text

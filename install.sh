@@ -11,6 +11,6 @@ mv alfa/core/httptools.py.new alfa/core/httptools.py
 
 #transmission torrent
 apt-get install transmission-cli
-#pip3.7 install transmissionrpc
+apt-get install sox
 
-print("done!")
+echo "done!"

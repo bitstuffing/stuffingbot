@@ -11,6 +11,7 @@ from bot.providers.exvagos import Exvagos
 from bot.providers.witai import Witai
 from google_speech import Speech
 from bot.core.torrent import Torrent
+from bot.providers.kat import KickAssTorrent
 
 session = requests.session()
 scraper = cfscrape.create_scraper(sess=session)
@@ -55,9 +56,23 @@ class Content():
                         text = Content.resumeTorrent(id)
                     elif command == "status":
                         text = Content.status(id)
+            elif "search" == command and len(params)>1:
+                provider = params[1]
+                if provider == 'kat':
+                    text = Content.searchKat(params,bot,chatId)
             else:
                 logger.debug("random text %s"%text)
                 text = Witai.query(text)
+        return text
+
+    @staticmethod
+    def searchKat(params,bot,chatId):
+        term = params[2]
+        entries = KickAssTorrent.search(term)
+        text = ""
+        for entry in entries:
+            logger.debug(entry["title"])
+            text+=entry["title"]+"\n"
         return text
 
     @staticmethod

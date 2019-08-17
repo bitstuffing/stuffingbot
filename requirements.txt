@@ -3,3 +3,5 @@ cfscrape
 requests
 js2py
 transmissionrpc
+google_speech
+pytg

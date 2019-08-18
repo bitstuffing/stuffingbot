@@ -15,6 +15,7 @@ from bot.providers.kat import KickAssTorrent
 
 from bot.core.decoder import Decoder
 from bot.core.speech_to_text_v1 import SpeechToText
+from bot.core.weather_forecast import WeatherForecast
 import urllib
 
 session = requests.session()
@@ -34,6 +35,16 @@ HEADERS = {
 }
 
 class Content():
+
+    @staticmethod
+    def weather(city):
+        response = WeatherForecast.getWeather(city)
+        content = ""
+        for line in response:
+            parse = "%s %s Temp: %s %s - %s\n" % (str(line["date"]),str(line["day"]),str(line["min"]).replace('&deg;',' '),str(line["max"]).replace('&deg;',' '),str(line["summary"]).replace("&#243;","o"))
+            logger.debug(parse)
+            content += parse
+        return content
 
     @staticmethod
     def transcribe(path):

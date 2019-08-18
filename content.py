@@ -12,6 +12,9 @@ from bot.providers.witai import Witai
 #from google_speech import Speech #has been ported to python2 and appended
 from bot.core.torrent import Torrent
 from bot.providers.kat import KickAssTorrent
+
+from bot.core.decoder import Decoder
+from bot.core.speech_to_text_v1 import SpeechToText
 import urllib
 
 session = requests.session()
@@ -31,6 +34,18 @@ HEADERS = {
 }
 
 class Content():
+
+    @staticmethod
+    def transcribe(path):
+        text = "None"
+        speech = SpeechToText()
+        extension = path[len(path)-4:]
+        if ".mp3" == extension:
+            path = Decoder.mp3ToWav(path)
+        elif ".oga" == extension or ".ogg" == extension:
+            path = Decoder.oggToWav(path)
+        text = speech.transcribe(path)
+        return text
 
     @staticmethod
     def searchKat(params,bot,chatId):

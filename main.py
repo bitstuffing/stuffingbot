@@ -4,11 +4,14 @@ import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from content import Content
 import time
+from datetime import datetime
 import os
+import json
 import logger
 from bot.core.config import Config
 
 TOKEN = Config.getConfig()["TOKEN"]
+DOWNLOAD_PATH = Config.getConfig()["DOWNLOAD_PATH"]
 bot = telegram.Bot(TOKEN)
 
 # Define a few command handlers. These usually take the two arguments bot and
@@ -25,9 +28,14 @@ def help(update, context):
 
 def echo(update, context):
     """Echo the user message."""
-    logger.debug(str(update))
-    logger.debug(str(context))
-    context.message.reply_text("echo: "+context.message.text)
+    logger.debug("UPDATE: %s"%str(update))
+    logger.debug("CONTEXT: %s"%str(context))
+    message = "No message"
+    try:
+        message = context.message.text
+    except:
+        logger.error("no message in context")
+    context.message.reply_text("echo: "+message)
 
 
 def error(update, context):
@@ -84,6 +92,60 @@ def torrent(update,context):
     context.message.reply_text(text)
     logger.debug('response: %s'%text)
 
+def got_file(bot, update):
+    """Handle files. Code by https://pbaumgarten.com/python/telegram/"""
+    global folder  # eg, folder = "downloads/"
+    file_id = None
+    bot = None
+    # user object contains {'first_name':, 'is_bot':, 'id':, 'language_code':}
+    # username: is optional, thus by default None!
+    sender = update.message.from_user.first_name + " (" + str(update.message.from_user.id) + ")"
+    voice = False
+    if update.message.audio:
+        voice = True
+        logger.debug(sender + ": Sent an audio message")
+        file_id = update.message.audio.file_id
+        bot = update.message.audio.bot
+    elif update.message.document:
+        logger.debug(sender + ": Sent a document")
+        file_id = update.message.document.file_id
+        bot = update.message.document.bot
+    elif update.message.photo:
+        logger.debug(sender + ": Sent a photo")
+        file_id = update.message.photo[-1].file_id
+        bot = update.message.photo[-1].bot
+    elif update.message.video:
+        logger.debug(sender + ": Sent a video")
+        file_id = update.message.video.file_id
+        bot = update.message.video.bot
+    elif update.message.video_note:
+        logger.debug(sender + ": Sent a video note")
+        file_id = update.message.video_note.file_id
+        bot = update.message.video_note.bot
+    elif update.message.voice:
+        voice = True
+        logger.debug(sender + ": Sent a voice message")
+        file_id = update.message.voice.file_id
+        bot = update.message.voice.bot
+    if file_id and bot:
+        new_file = bot.get_file(file_id)
+        extension = new_file.file_path.split(".")[-1]  # get file extension of received file
+        datetime_str = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+        file_name = DOWNLOAD_PATH + datetime_str + "-" + str(update.message.chat_id) + "." + extension
+        new_file.download(file_name)
+        logger.debug("Downloaded file: {}".format(file_name))
+        if voice:
+            logger.debug("voice detected, launching transcription service...")
+            text = Content.transcribe(file_name) #TODO: json -> results[0].alternative[0].transcript
+            jsonLoaded = json.loads(text)
+            text = ""
+            for content in jsonLoaded["results"]:
+                text += content["alternatives"][0]["transcript"]+"\n"
+            logger.debug("returned text: %s"%text)
+            update.message.reply_text(text)
+    else:
+        logger.debug("Unable to download file")
+
 
 def main():
     logger.info("Initting bot...")
@@ -94,6 +156,13 @@ def main():
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
+
+    updater.dispatcher.add_handler(MessageHandler(Filters.audio, got_file))
+    updater.dispatcher.add_handler(MessageHandler(Filters.document, got_file))
+    updater.dispatcher.add_handler(MessageHandler(Filters.photo, got_file))
+    updater.dispatcher.add_handler(MessageHandler(Filters.voice, got_file))
+    updater.dispatcher.add_handler(MessageHandler(Filters.video, got_file))
+    updater.dispatcher.add_handler(MessageHandler(Filters.video_note, got_file))
 
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))

@@ -5,3 +5,5 @@ js2py
 transmissionrpc
 #google_speech
 pytg
+pydub
+ibm_watson

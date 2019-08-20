@@ -24,12 +24,11 @@ bot = telegram.Bot(TOKEN)
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(update, context):
     """Send a message when the command /start is issued."""
-    context.message.reply_text('Hi!')
+    context.message.reply_text('Bienvenido.\nPara solicitar ayuda escriba /help')
 
 @run_async
 def help(update, context):
-    """Send a message when the command /help is issued."""
-    context.message.reply_text('Help!')
+    context.message.reply_text('Listado de comandos:\n/decode (link)\n/exvagos (seccion)\n/habla (frase)\n/torrent (url)\n/pronostico (ciudad)')
 
 @run_async
 def echo(update, context):
@@ -41,7 +40,7 @@ def echo(update, context):
         message = context.message.text
     except:
         logger.error("no message in context")
-    context.message.reply_text("echo: "+message)
+    context.message.reply_text("echo: %s"%message)
 
 
 def error(update, context):
@@ -158,6 +157,17 @@ def got_file(bot, update):
     else:
         logger.debug("Unable to download file")
 
+def pronostico(update,context):
+    message = context.message.text
+    chatId = context.message.chat.id
+    params = message.split(" ")
+    logger.debug("request: %s"%message)
+    message = message[message.find(" ")+1:]
+    text = Content.weather(message)
+
+    context.message.reply_text(text)
+    logger.debug("response: %s"%text)
+
 
 def main():
     logger.info("Initting bot...")
@@ -185,6 +195,7 @@ def main():
     dp.add_handler(CommandHandler("exvagos", exvagos))
     dp.add_handler(CommandHandler("habla", habla))
     dp.add_handler(CommandHandler("torrent", torrent))
+    dp.add_handler(CommandHandler("pronostico", pronostico))
     #end old commands migration
 
     # on noncommand i.e message - echo the message on Telegram

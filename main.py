@@ -16,8 +16,14 @@ import json
 import logger
 from bot.core.config import Config
 
-TOKEN = Config.getConfig()["TOKEN"]
-DOWNLOAD_PATH = Config.getConfig()["DOWNLOAD_PATH"]
+config = Config.getConfig()
+
+TOKEN = config["TOKEN"]
+DOWNLOAD_PATH = config["DOWNLOAD_PATH"]
+HTTP_URI = config["HTTP_URI"]
+TELEGRAM_CLI = config["TELEGRAM_CLI"]
+BOT_NAME = config["BOT_NAME"]
+
 bot = telegram.Bot(TOKEN)
 
 # Define a few command handlers. These usually take the two arguments bot and
@@ -157,6 +163,7 @@ def got_file(bot, update):
     else:
         logger.debug("Unable to download file")
 
+@run_async
 def pronostico(update,context):
     message = context.message.text
     chatId = context.message.chat.id
@@ -167,6 +174,19 @@ def pronostico(update,context):
 
     context.message.reply_text(text)
     logger.debug("response: %s"%text)
+
+@run_async
+def upload(update,context):
+    logger.debug("upload!")
+    message = context.message.text
+    chatId = context.message.chat.id
+    #botName, file, telegramCli
+    params = message.split(" ")
+    file = params[1]
+    logger.debug("target file: %s"%file)
+    if os.path.exists(DOWNLOAD_PATH+file) and os.path.isfile(DOWNLOAD_PATH+file):
+    	Content.upload(BOT_NAME,DOWNLOAD_PATH+file,TELEGRAM_CLI)
+    context.message.reply_text("uploaded file %s"%file)
 
 
 def main():
@@ -196,6 +216,7 @@ def main():
     dp.add_handler(CommandHandler("habla", habla))
     dp.add_handler(CommandHandler("torrent", torrent))
     dp.add_handler(CommandHandler("pronostico", pronostico))
+    dp.add_handler(CommandHandler("upload",upload))
     #end old commands migration
 
     # on noncommand i.e message - echo the message on Telegram

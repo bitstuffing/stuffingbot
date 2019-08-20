@@ -213,6 +213,14 @@ class Content():
             #bot.sendVideo(chatId,open(DOWNLOAD_PATH+videoFile,'rb'))
 
     @staticmethod
+    def upload(botName,file,telegramCli):
+        bashCommand = '(sleep 1;echo "dialog_list";sleep 2; echo "send_file %s \'%s\'") | %s -W -v -k server.pub' % (botName,file,telegramCli)
+        return_code = subprocess.call(bashCommand,shell=True)
+        logger.debug("upload %s has finished" % file)
+
+
+
+    @staticmethod
     def speech(params,bot,chatId,lang='es'):
         text = " ".join(params[1:])
         #speech = Speech(text, lang=lang)

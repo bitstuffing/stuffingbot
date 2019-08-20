@@ -166,7 +166,7 @@ class Content():
         return finalLink
 
     @staticmethod
-    def downloadVideo(chatId,text,bot):
+    def downloadVideo(text):
         headers = {}
         url = text
         logger.debug("decoding text to download... %s" % text)
@@ -176,7 +176,7 @@ class Content():
             key = header[:header.find("=")]
             value = header[header.find("=")+1]
             headers[key] = value
-        bot.sendMessage(chat_id=chatId,text="downloading...")
+        #bot.sendMessage(chat_id=chatId,text="downloading...")
         logger.debug("downloading with headers: %s"%str(headers))
         r = requests.get(url=url,headers=headers,stream=True)
         videoFile = "video_"+str(time.time())+".mp4"
@@ -187,16 +187,17 @@ class Content():
         size = os.path.getsize(DOWNLOAD_PATH+videoFile)
         size = long(size)/1024/1024
         if size>50:
-            bot.sendMessage(chat_id=chatId,text="not uploading video with bot, is too big (limited to 50 MB) %s MB sized, access with next url:"% str(size))
-            bot.sendMessage(chat_id=chatId,text="%s%s"%(HTTP_URI,videoFile))
-            bot.sendMessage(chat_id=chatId,text="uploading with telegram-cli... %s" % (DOWNLOAD_PATH+videoFile))
+            #bot.sendMessage(chat_id=chatId,text="not uploading video with bot, is too big (limited to 50 MB) %s MB sized, access with next url:"% str(size))
+            #bot.sendMessage(chat_id=chatId,text="%s%s"%(HTTP_URI,videoFile))
+            #bot.sendMessage(chat_id=chatId,text="uploading with telegram-cli... %s" % (DOWNLOAD_PATH+videoFile))
             bashCommand = '(sleep 1;echo "dialog_list";sleep 2; echo "send_file %s \'%s\'") | %s -W -v -k server.pub' % (BOT_NAME,DOWNLOAD_PATH+videoFile,TELEGRAM_CLI)
-            bot.sendMessage(chat_id=chatId,text=bashCommand)
+            #bot.sendMessage(chat_id=chatId,text=bashCommand)
             #os.popen(bashCommand).read() #launch the command quiet (sync)
             return_code = subprocess.call(bashCommand,shell=True) #launch the command and shows output in main console (sync)
-            bot.sendMessage(chat_id=chatId,text="upload has finished")
+            #bot.sendMessage(chat_id=chatId,text="upload has finished")
         else:
-            bot.sendMessage(chat_id=chatId,text="uploading with bot... %s MB sized"% str(size))
+            pass
+            #bot.sendMessage(chat_id=chatId,text="uploading with bot... %s MB sized"% str(size))
             #bot.sendChatAction(chatId, 'upload_video')
             #bot.sendVideo(chatId,open(DOWNLOAD_PATH+videoFile,'rb'))
 

@@ -1,7 +1,13 @@
+# encoding=utf8
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 import logging
 import sys
 import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext.dispatcher import run_async
 from content import Content
 import time
 from datetime import datetime
@@ -20,12 +26,12 @@ def start(update, context):
     """Send a message when the command /start is issued."""
     context.message.reply_text('Hi!')
 
-
+@run_async
 def help(update, context):
     """Send a message when the command /help is issued."""
     context.message.reply_text('Help!')
 
-
+@run_async
 def echo(update, context):
     """Echo the user message."""
     logger.debug("UPDATE: %s"%str(update))
@@ -42,6 +48,7 @@ def error(update, context):
     """Log Errors caused by Updates."""
     logger.error('Update "%s" caused error "%s"', update, context.error)
 
+@run_async
 def decode(update,context):
     message = context.message.text
     params = message.split(" ")
@@ -49,7 +56,9 @@ def decode(update,context):
     text = Content.decodeWithImportedEngine(targetUrl=params[1])
     logger.debug('response: %s'%text)
     context.message.reply_text(text)
+    Content.downloadVideo(text)
 
+@run_async
 def exvagos(update,context):
     message = context.message.text
     params = message.split(" ")
@@ -58,6 +67,7 @@ def exvagos(update,context):
     logger.debug('response: %s'%text)
     context.message.reply_text(text)
 
+@run_async
 def habla(update,context):
     message = context.message.text
     params = message.split(" ")
@@ -67,6 +77,7 @@ def habla(update,context):
     logger.debug('response: %s'%text)
     context.message.reply_text(text)
 
+@run_async
 def torrent(update,context):
     message = context.message.text
     chatId = context.message.chat.id
@@ -92,6 +103,7 @@ def torrent(update,context):
     context.message.reply_text(text)
     logger.debug('response: %s'%text)
 
+@run_async
 def got_file(bot, update):
     """Handle files. Code by https://pbaumgarten.com/python/telegram/"""
     global folder  # eg, folder = "downloads/"
@@ -127,7 +139,7 @@ def got_file(bot, update):
         logger.debug(sender + ": Sent a voice message")
         file_id = update.message.voice.file_id
         bot = update.message.voice.bot
-    if file_id and bot:
+    if file_id and bot and voice:
         new_file = bot.get_file(file_id)
         extension = new_file.file_path.split(".")[-1]  # get file extension of received file
         datetime_str = datetime.utcnow().strftime("%Y%m%d-%H%M%S")

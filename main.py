@@ -34,7 +34,7 @@ def start(update, context):
 
 @run_async
 def help(update, context):
-    context.message.reply_text('Listado de comandos:\n/decode (link)\n/exvagos (seccion)\n/habla (frase)\n/torrent (url)\n/pronostico (ciudad)')
+    context.message.reply_text('Listado de comandos:\n/decode (link)\n/exvagos (seccion)\n/habla (frase)\n/torrent [url|status|remove id|pause id|resume id|delete id]\n/pronostico (ciudad)')
 
 @run_async
 def echo(update, context):
@@ -194,7 +194,7 @@ def main():
     # Create the Updater and pass it your bot's token.
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
-    updater = Updater(TOKEN)
+    updater = Updater(token=TOKEN,workers=99)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher

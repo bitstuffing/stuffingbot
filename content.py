@@ -117,6 +117,8 @@ class Content():
             else:
                 size = status.totalSize
             message += "%s :: %.0f%% P: %s S: %s Size: %s :T: %s \n"%(status.id,(percent*100),len(status.peers),seeders,size,status.name)
+        if message == '' and len(list)==0:
+            message = "Empty torrent list"
         return message
 
     @staticmethod

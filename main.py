@@ -6,6 +6,7 @@ sys.setdefaultencoding('utf8')
 import logging
 import sys
 import telegram
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram.ext.dispatcher import run_async
 from content import Content
@@ -45,6 +46,7 @@ def help(update, context):
 
 @run_async
 def echo(update, context):
+    telegram.ReplyKeyboardRemove()
     """Echo the user message."""
     logger.debug("UPDATE: %s"%str(update))
     logger.debug("CONTEXT: %s"%str(context))
@@ -82,11 +84,33 @@ def exvagos(update,context):
 @run_async
 def flipax(update,context):
     message = context.message.text
-    params = message.split(" ")
+    params = []
+    if " " in message:
+        params.append(message[:message.find(" ")-1])
+        if " - " in message:
+            section = message[message.find(" ")+1:].split(" - ")[0]
+            content = message[message.find(" ")+1:].split(" - ")[1]
+            params.append(section)
+            params.append(content)
+        else:
+            params.append(message[message.find(" ")+1:])
+    logger.debug(str(params))
     logger.debug("request: %s"%message)
-    text = Content.getFlipax(params)
+    entries = Content.getFlipax(params)
+    keyboard = []
+    for entry in entries:
+        text = message
+        if len(params)==2:
+            text+=" -"
+        if len(params)==3:
+            text="/decode"
+        text += " "+entry["title"]
+        key = [InlineKeyboardButton(text=text)]
+        keyboard.append(key)
+    reply_markup = ReplyKeyboardMarkup(keyboard,resize_keyboard=True)
+    text = 'please select an option from command %s'%message
     logger.debug('response: %s'%text)
-    context.message.reply_text(text)
+    context.message.reply_text(text,reply_markup=reply_markup,parse_mode=telegram.ParseMode.HTML)
 
 @run_async
 def habla(update,context):

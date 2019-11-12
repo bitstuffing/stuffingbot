@@ -13,8 +13,8 @@ class Flipax():
     session = ''
 
     @staticmethod
-    def getSection(section=''):
-        if Flipax.session == '':
+    def getSection(section='', content=''):
+        if Flipax.session == '' and content != '':
             Flipax.session = requests.get(Flipax.MAIN).cookies
             logger.debug("Cookie %s"%str(Flipax.session))
             requests.post(Flipax.MAIN+"/login",data={
@@ -55,6 +55,7 @@ class Flipax():
                 logger.debug("found link!")
                 html = requests.get(link, headers=headers, cookies=session, verify=True).text
                 elements = []
+                found = False
                 for block in html.split('<ul class="topiclist topics bg_none">'):
                     i=0
                     for field in block.split('<li class="row '):
@@ -66,7 +67,24 @@ class Flipax():
                             element["title"] = title
                             element["link"] = link
                             logger.debug(title+'.-.'+link)
-                            if len(title)>0:
+                            if len(title)>0 and len(content)==0:
                                 elements.append(element)
+                            elif content in element["title"]:
+                                logger.debug("found link: %s"%content)
+                                link = element["link"]
+                                found = True
+                                break
+                            else:
+                                logger.debug("not found: %s|%s"%(content,element["title"]))
                         i+=1
+                if found:
+                    html = requests.get(link, headers=headers,cookies=session, verify=True).text
+                    section = Decoder.extract('<div class="postbody"><div class="content"><div><div align="center">','</div></div></div>',html)
+                    logger.debug("html is: %s"%section)
+                    for link in section.split('target="_blank" rel="nofollow">'):
+                        link = link[:link.find('<')]
+                        element = {}
+                        element["title"] = link
+                        element["link"] = link
+                        elements.append(element)
         return elements

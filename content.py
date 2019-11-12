@@ -133,14 +133,13 @@ class Content():
     @staticmethod
     def getFlipax(params):
         argument = ''
+        content = ''
         if len(params)>1:
             argument = params[1]
-        entries = Flipax.getSection(argument)
-        text = ""
-        for entry in entries:
-            logger.debug(entry["title"])
-            text+=entry["title"]+"\n"
-        return text
+        if len(params)>2:
+            content = params[2]
+        entries = Flipax.getSection(argument,content)
+        return entries
 
     @staticmethod
     def getExvagos(params):

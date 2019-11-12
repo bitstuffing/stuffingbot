@@ -5,7 +5,7 @@ from bot.core.config import Config
 
 class Flipax():
 
-    MAIN = 'https://www.flipax.com/'
+    MAIN = 'https://www.flipax.net/'
 
     FLIPAX_PASSWORD = Config.getConfig()["FLIPAX_PASSWORD"]
     FLIPAX_USERNAME = Config.getConfig()["FLIPAX_USERNAME"]

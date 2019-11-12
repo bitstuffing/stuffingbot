@@ -133,7 +133,7 @@ class Content():
     @staticmethod
     def getFlipax(params):
         argument = ''
-        if len(params)>0:
+        if len(params)>1:
             argument = params[1]
         entries = Flipax.getSection(argument)
         text = ""

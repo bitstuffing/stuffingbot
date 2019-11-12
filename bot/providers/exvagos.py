@@ -11,14 +11,15 @@ class Exvagos():
 
     @staticmethod
     def getSection(section):
-        if Exvagos.session == '':
-            Exvagos.session = cloudscraper.create_scraper()
+#        if Exvagos.session == '' and False:
+#            Exvagos.session = cloudscraper.create_scraper()
         session = Exvagos.session
         logger.debug("Using session %s "%str(session))
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0','Connection': 'keep-alive'}
-        html = session.get(Exvagos.MAIN, headers=headers, verify=True).text
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64; rv:34.0) Gecko/20100101 Firefox/58.0','Connection': 'keep-alive'}
+        html = requests.get(Exvagos.MAIN, headers=headers).text
+        logger.debug("html is: %s"%html)
         link = Exvagos.MAIN+Decoder.rExtract('<a href="','">'+section+"<",html)
-        html = session.get(link, headers=headers, verify=True).text
+        html = requests.get(link, headers=headers, verify=True).text
         table = Decoder.extract('<td class="thead" colspan="7">&nbsp;</td>',"</tbody>",html)
         i=0
         elements = []

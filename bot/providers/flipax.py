@@ -5,7 +5,7 @@ from bot.core.config import Config
 
 class Flipax():
 
-    MAIN = 'https://www.flipax.net/'
+    MAIN = 'https://www.flipax.net'
 
     FLIPAX_PASSWORD = Config.getConfig()["FLIPAX_PASSWORD"]
     FLIPAX_USERNAME = Config.getConfig()["FLIPAX_USERNAME"]
@@ -17,7 +17,7 @@ class Flipax():
         if Flipax.session == '':
             Flipax.session = requests.get(Flipax.MAIN).cookies
             logger.debug("Cookie %s"%str(Flipax.session))
-            requests.post(Flipax.MAIN+"login",data={
+            requests.post(Flipax.MAIN+"/login",data={
                 'username':Flipax.FLIPAX_USERNAME,
                 'password':Flipax.FLIPAX_PASSWORD,
                 'autologin':'on',
@@ -47,19 +47,22 @@ class Flipax():
         if len(section)>0:
             link = ''
             for element in elements:
-                if element.title.lower() == section.lower():
-                    link = element.link
+                logger.debug(element["title"])
+                if element["title"].lower() == section.lower():
+                    link = element["link"]
                     break
             if len(link)>0:
+                logger.debug("found link!")
                 html = requests.get(link, headers=headers, cookies=session, verify=True).text
                 elements = []
-                for block in html.split('<ul class="topiclist forums">'):
+                for block in html.split('<ul class="topiclist topics bg_none">'):
                     i=0
-                    for field in block.split('<li class="row">'):
+                    for field in block.split('<li class="row '):
                         if i>0:
                             element = {}
-                            title = Decoder.extract('class="forumtitle">','</a>',field)
-                            link = Flipax.MAIN+Decoder.extract('a href="','"',field)
+                            title = Decoder.extract('class="topictitle"','</a>',field)
+                            title = title[title.find(">")+1:]
+                            link = Flipax.MAIN+Decoder.extract(' href="','"',field)
                             element["title"] = title
                             element["link"] = link
                             logger.debug(title+'.-.'+link)

@@ -34,13 +34,13 @@ def start(update, context):
 
 @run_async
 def help(update, context):
-    text = 'Listado de comandos:'+
-        '\n/decode (link)'+
-        '\n/exvagos (seccion)'+
-        '\n/flipax '+
-        '\n/habla (frase)'+
-        '\n/torrent [url|status|remove id|pause id|resume id|delete id]'+
-        '\n/pronostico (ciudad)'
+    text = ('Listado de comandos:'
+        '\n/decode (link)'
+        '\n/exvagos (seccion)'
+        '\n/flipax '
+        '\n/habla (frase)'
+        '\n/torrent [url|status|remove id|pause id|resume id|delete id]'
+        '\n/pronostico (ciudad)')
     context.message.reply_text(text)
 
 @run_async

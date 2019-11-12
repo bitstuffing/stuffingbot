@@ -132,7 +132,10 @@ class Content():
 
     @staticmethod
     def getFlipax(params):
-        entries = Flipax.getSection(params[1])
+        argument = ''
+        if len(params)>0:
+            argument = params[1]
+        entries = Flipax.getSection(argument)
         text = ""
         for entry in entries:
             logger.debug(entry["title"])

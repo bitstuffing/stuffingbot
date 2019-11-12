@@ -8,6 +8,7 @@ import subprocess #syscalls
 from pytg import Telegram
 from bot.core.config import Config
 from bot.providers.exvagos import Exvagos
+from bot.providers.flipax import Flipax
 from bot.providers.witai import Witai
 #from google_speech import Speech #has been ported to python2 and appended
 from bot.core.torrent import Torrent
@@ -128,6 +129,15 @@ class Content():
         status = torrent.add(torrentUrl)
         bot.sendMessage(chat_id=chatId,text="torrent %s with id %s."%(status.name,status.id))
         return status.id
+
+    @staticmethod
+    def getFlipax(params):
+        entries = Flipax.getSection(params[1])
+        text = ""
+        for entry in entries:
+            logger.debug(entry["title"])
+            text+=entry["title"]+"\n"
+        return text
 
     @staticmethod
     def getExvagos(params):

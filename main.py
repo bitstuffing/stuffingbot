@@ -34,7 +34,14 @@ def start(update, context):
 
 @run_async
 def help(update, context):
-    context.message.reply_text('Listado de comandos:\n/decode (link)\n/exvagos (seccion)\n/habla (frase)\n/torrent [url|status|remove id|pause id|resume id|delete id]\n/pronostico (ciudad)')
+    text = 'Listado de comandos:'+
+        '\n/decode (link)'+
+        '\n/exvagos (seccion)'+
+        '\n/flipax '+
+        '\n/habla (frase)'+
+        '\n/torrent [url|status|remove id|pause id|resume id|delete id]'+
+        '\n/pronostico (ciudad)'
+    context.message.reply_text(text)
 
 @run_async
 def echo(update, context):
@@ -69,6 +76,15 @@ def exvagos(update,context):
     params = message.split(" ")
     logger.debug("request: %s"%message)
     text = Content.getExvagos(params)
+    logger.debug('response: %s'%text)
+    context.message.reply_text(text)
+
+@run_async
+def flipax(update,context):
+    message = context.message.text
+    params = message.split(" ")
+    logger.debug("request: %s"%message)
+    text = Content.getFlipax(params)
     logger.debug('response: %s'%text)
     context.message.reply_text(text)
 

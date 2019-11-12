@@ -15,9 +15,9 @@ class Flipax():
     @staticmethod
     def getSection(section):
         if Flipax.session == '':
-            Flipax.session = requests.get(Flipax.MAIN)['headers']['Cookie']
-            logger.debug("Cookie %s"%Flipax.session)
-            request.post(Flipax.MAIN+"login",data={
+            Flipax.session = requests.get(Flipax.MAIN).cookies
+            logger.debug("Cookie %s"%str(Flipax.session))
+            requests.post(Flipax.MAIN+"login",data={
                 'username':Flipax.FLIPAX_USERNAME,
                 'password':Flipax.FLIPAX_PASSWORD,
                 'autologin':'on',
@@ -25,20 +25,22 @@ class Flipax():
                 'query':'',
                 'login':'Conectarse',
             })
-        session = Exvagos.session
+        
+        session = Flipax.session
         logger.debug("Using session %s "%str(session))
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64; rv:54.0) Gecko/20100101 Firefox/58.0','Connection': 'keep-alive','Cookie':session}
-        html = requests.get(Exvagos.MAIN, headers=headers, verify=True).text
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64; rv:54.0) Gecko/20100101 Firefox/58.0','Connection': 'keep-alive'}
+        html = requests.get(Flipax.MAIN, headers=headers, cookies=session, verify=True).text
         elements = []
         for block in html.split('<ul class="topiclist forums">'):
             i=0
             for field in block.split('<li class="row">'):
                 if i>0:
                     element = {}
-                    title = Decoder.rExtract('>','</a>',field)
-                    link = Flipax.MAIN+'showthread.php?t='+Decoder.extract('a href="','"',field)
+                    title = Decoder.extract('class="forumtitle">','</a>',field)
+                    link = Flipax.MAIN+Decoder.extract('a href="','"',field)
                     element["title"] = title
                     element["link"] = link
+                    logger.debug(title+'.-.'+link)
                     elements.append(element)
                 i+=1
         return elements

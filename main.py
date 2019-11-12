@@ -229,6 +229,7 @@ def main():
     #start old commands migration
     dp.add_handler(CommandHandler("decode", decode))
     dp.add_handler(CommandHandler("exvagos", exvagos))
+    dp.add_handler(CommandHandler("flipax", flipax))
     dp.add_handler(CommandHandler("habla", habla))
     dp.add_handler(CommandHandler("torrent", torrent))
     dp.add_handler(CommandHandler("pronostico", pronostico))

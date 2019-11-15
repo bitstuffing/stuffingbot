@@ -2,12 +2,12 @@
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
-
+import urllib
 import logging
 import sys
 import telegram
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 from telegram.ext.dispatcher import run_async
 from content import Content
 import time
@@ -31,7 +31,7 @@ bot = telegram.Bot(TOKEN)
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(update, context):
     """Send a message when the command /start is issued."""
-    context.message.reply_text('Bienvenido.\nPara solicitar ayuda escriba /help')
+    update.message.reply_text('Bienvenido.\nPara solicitar ayuda escriba /help')
 
 @run_async
 def help(update, context):
@@ -42,7 +42,7 @@ def help(update, context):
         '\n/habla (frase)'
         '\n/torrent [url|status|remove id|pause id|resume id|delete id]'
         '\n/pronostico (ciudad)')
-    context.message.reply_text(text)
+    update.message.reply_text(text)
 
 @run_async
 def echo(update, context):
@@ -52,10 +52,10 @@ def echo(update, context):
     logger.debug("CONTEXT: %s"%str(context))
     message = "No message"
     try:
-        message = context.message.text
+        message = update.message.text
     except:
         logger.error("no message in context")
-    context.message.reply_text("echo: %s"%message)
+    update.message.reply_text("echo: %s"%message)
 
 
 def error(update, context):
@@ -64,26 +64,42 @@ def error(update, context):
 
 @run_async
 def decode(update,context):
-    message = context.message.text
+    message = update.message.text
     params = message.split(" ")
     logger.debug("request: %s"%message)
     text = Content.decodeWithImportedEngine(targetUrl=params[1])
     logger.debug('response: %s'%text)
-    context.message.reply_text(text)
+    update.message.reply_text(text)
     Content.downloadVideo(text)
 
 @run_async
 def exvagos(update,context):
-    message = context.message.text
+    message = update.message.text
     params = message.split(" ")
     logger.debug("request: %s"%message)
     text = Content.getExvagos(params)
     logger.debug('response: %s'%text)
-    context.message.reply_text(text)
+    update.message.reply_text(text)
+
+@run_async
+def buttons(update,context):
+    logger.debug(str(update))
+    logger.debug(str(context))
+    query = update.callback_query.data
+    if " " in query:
+        queries = query.split(" ")
+        if "/flipax" in queries[0]:
+            query = update.callback_query.data
+            logger.debug("calling flipax with %s "%query)
+            flipax_callback(update,query)
 
 @run_async
 def flipax(update,context):
-    message = context.message.text
+    message = update.message.text
+
+    flipax_callback(update,message)
+
+def flipax_callback(update,message):
     params = []
     if " " in message:
         params.append(message[:message.find(" ")-1])
@@ -105,27 +121,30 @@ def flipax(update,context):
         if len(params)==3:
             text="/decode"
         text += " "+entry["title"]
-        key = [InlineKeyboardButton(text=text)]
+        key = [InlineKeyboardButton(text=entry["title"],callback_data=text)]
         keyboard.append(key)
-    reply_markup = ReplyKeyboardMarkup(keyboard,resize_keyboard=True)
+    reply_markup = InlineKeyboardMarkup(keyboard,resize_keyboard=True)
     text = 'please select an option from command %s'%message
     logger.debug('response: %s'%text)
-    context.message.reply_text(text,reply_markup=reply_markup,parse_mode=telegram.ParseMode.HTML)
+    if 'reply_text' in dir(update.message):
+        update.message.reply_text(text,reply_markup=reply_markup,parse_mode=telegram.ParseMode.HTML)
+    else:
+        update.callback_query.edit_message_text(text,reply_markup=reply_markup,parse_mode=telegram.ParseMode.HTML)
 
 @run_async
 def habla(update,context):
-    message = context.message.text
+    message = update.message.text
     params = message.split(" ")
     logger.debug("request: %s"%message)
-    chatId = context.message.chat.id
+    chatId = update.message.chat.id
     text = Content.speech(params,bot,chatId)
     logger.debug('response: %s'%text)
-    context.message.reply_text(text)
+    update.message.reply_text(text)
 
 @run_async
 def torrent(update,context):
-    message = context.message.text
-    chatId = context.message.chat.id
+    message = update.message.text
+    chatId = update.message.chat.id
     params = message.split(" ")
     logger.debug("request: %s"%message)
     if '.torrent' in params[1] or 'magnet:' in params[1]:
@@ -145,7 +164,7 @@ def torrent(update,context):
             text = Content.resumeTorrent(id)
         elif command == "status":
             text = Content.status(id)
-    context.message.reply_text(text)
+    update.message.reply_text(text)
     logger.debug('response: %s'%text)
 
 @run_async
@@ -205,28 +224,28 @@ def got_file(bot, update):
 
 @run_async
 def pronostico(update,context):
-    message = context.message.text
-    chatId = context.message.chat.id
+    message = update.message.text
+    chatId = update.message.chat.id
     params = message.split(" ")
     logger.debug("request: %s"%message)
     message = message[message.find(" ")+1:]
     text = Content.weather(message)
 
-    context.message.reply_text(text)
+    update.message.reply_text(text)
     logger.debug("response: %s"%text)
 
 @run_async
 def upload(update,context):
     logger.debug("upload!")
-    message = context.message.text
-    chatId = context.message.chat.id
+    message = update.message.text
+    chatId = update.message.chat.id
     #botName, file, telegramCli
     params = message.split(" ")
     file = params[1]
     logger.debug("target file: %s"%file)
     if os.path.exists(DOWNLOAD_PATH+file) and os.path.isfile(DOWNLOAD_PATH+file):
     	Content.upload(BOT_NAME,DOWNLOAD_PATH+file,TELEGRAM_CLI)
-    context.message.reply_text("uploaded file %s"%file)
+    update.message.reply_text("uploaded file %s"%file)
 
 
 def main():
@@ -234,7 +253,7 @@ def main():
     # Create the Updater and pass it your bot's token.
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
-    updater = Updater(token=TOKEN,workers=99)
+    updater = Updater(token=TOKEN,use_context=True,workers=99)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
@@ -262,6 +281,9 @@ def main():
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
+
+    #handler of query_data in buttons
+    dp.add_handler(CallbackQueryHandler(buttons))
 
     # log all errors
     dp.add_error_handler(error)

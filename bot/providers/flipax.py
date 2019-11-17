@@ -72,8 +72,8 @@ class Flipax():
 
     @staticmethod
     def extractSections():
-        logger.debug("Using session %s "%str(Flipax.sessions))
-        html = requests.get(Flipax.MAIN, headers=headers, cookies=Flipax.session, verify=True).text
+        logger.debug("Using session %s "%str(Flipax.session))
+        html = requests.get(Flipax.MAIN, headers=Flipax.headers, cookies=Flipax.session, verify=True).text
         elements = []
         for block in html.split('<ul class="topiclist forums">'):
             i=0

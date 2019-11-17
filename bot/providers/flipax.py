@@ -12,13 +12,13 @@ class Flipax():
 
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64; rv:54.0) Gecko/20100101 Firefox/58.0','Connection': 'keep-alive'}
 
-    session = ''
+    session = None
 
     @staticmethod
     def login():
-        Flipax.session = requests.get(Flipax.MAIN).cookies
+        s = requests.Session()
         logger.debug("Cookie %s"%str(Flipax.session))
-        response = requests.post(Flipax.MAIN+"/login",data={
+        response = s.post(Flipax.MAIN+"/login",data={
             'username':Flipax.FLIPAX_USERNAME,
             'password':Flipax.FLIPAX_PASSWORD,
             'autologin':'on',
@@ -26,12 +26,13 @@ class Flipax():
             'query':'',
             'login':'Conectarse',
         })
-        logger.debug(str(response))
+        Flipax.session = s
+        logger.debug("LOGIN %s response is: %s"%(str(s),str(response)))
 
     @staticmethod
     def extractSection(link,content):
         logger.debug("found link!")
-        html = requests.get(link, headers=Flipax.headers, cookies=Flipax.session, verify=True).text
+        html = requests.get(link, headers=Flipax.headers, verify=True).text
         elements = []
         newLink = link
         for block in html.split('<ul class="topiclist topics bg_none">'):
@@ -61,7 +62,8 @@ class Flipax():
     @staticmethod
     def extractLinks(link):
         elements = []
-        html = requests.get(link, headers=Flipax.headers,cookies=Flipax.session, verify=True).text
+        logger.debug("flipax cookie is %s" % str(Flipax.session))
+        html = Flipax.session.get(link, headers=Flipax.headers).text
         section = Decoder.extract('<div class="postbody"><div class="content"><div><div align="center">','</div></div></div>',html)
         logger.debug("html is: %s"%section)
         for link in section.split('target="_blank" rel="nofollow">'):
@@ -75,7 +77,7 @@ class Flipax():
     @staticmethod
     def extractSections():
         logger.debug("Using session %s "%str(Flipax.session))
-        html = requests.get(Flipax.MAIN, headers=Flipax.headers, cookies=Flipax.session, verify=True).text
+        html = requests.get(Flipax.MAIN, headers=Flipax.headers, verify=True).text
         elements = []
         for block in html.split('<ul class="topiclist forums">'):
             i=0
@@ -99,7 +101,7 @@ class Flipax():
 
         if '/t' in section:
 
-            if Flipax.session == '' and content != '':
+            if Flipax.session is None:
                 Flipax.login()
             link = Flipax.MAIN+section+"-"
             logger.debug("using target link %s " % link)

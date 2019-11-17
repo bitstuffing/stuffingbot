@@ -68,9 +68,16 @@ def decode(update,context):
     message = update.message.text
     params = message.split(" ")
     logger.debug("request: %s"%message)
+    decode_callback(update,params)
+
+@run_async
+def decode_callback(update,params):
     text = Content.decodeWithImportedEngine(targetUrl=params[1])
     logger.debug('response: %s'%text)
-    update.message.reply_text(text)
+    if "reply_text" in dir(update.message):
+        update.message.reply_text(text)
+    else:
+        bot.send_message(chat_id=update.callback_query.message.chat.id,text=text)
     Content.downloadVideo(text)
 
 @run_async
@@ -80,12 +87,14 @@ def exvagos(update,context):
     logger.debug("request: %s"%message)
     text = Content.getExvagos(params)
     logger.debug('response: %s'%text)
-    update.message.reply_text(text)
+    if 'reply_text' in dir(update.message):
+        update.message.reply_text(text)
+    else:
+        bot.send_message(chat_id=update.callback_query.message.chat.id,text=text)
+
 
 @run_async
 def buttons(update,context):
-    logger.debug(str(update))
-    logger.debug(str(context))
     query = update.callback_query.data
     if " " in query:
         queries = query.split(" ")
@@ -93,6 +102,8 @@ def buttons(update,context):
             query = update.callback_query.data
             logger.debug("calling flipax with %s "%query)
             flipax_callback(update,query)
+        elif "/decode" in queries[0]:
+            decode_callback(update,queries)
 
 @run_async
 def flipax(update,context):
@@ -117,8 +128,11 @@ def flipax_callback(update,message):
     keyboard = []
     for entry in entries:
         text = "/flipax"
+        finalLink = True
         if "https://www.flipax.net/f" in entry["link"]:
             text += " - %s" % entry["title"]
+        elif "flipax.net" not in entry["link"]:
+            text = "/decode %s" % entry["link"]
         else:
             uri = Decoder.extract('.net','-',entry["link"])
             text += " %s" % uri

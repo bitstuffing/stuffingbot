@@ -29,11 +29,11 @@ class Flipax():
         logger.debug(str(response))
 
     @staticmethod
-    def extractSection(link):
+    def extractSection(link,content):
         logger.debug("found link!")
         html = requests.get(link, headers=Flipax.headers, cookies=Flipax.session, verify=True).text
         elements = []
-        found = False
+        newLink = link
         for block in html.split('<ul class="topiclist topics bg_none">'):
             i=0
             for field in block.split('<li class="row '):
@@ -48,18 +48,19 @@ class Flipax():
                     if len(title)>0 and len(content)==0:
                         elements.append(element)
                     elif content in element["title"]:
-                        logger.debug("found link: %s"%content)
+                        logger.debug("found %s link: %s"%(content,content))
                         link = element["link"]
                         logger.debug("link is :%s"%link)
-                        found = True
+                        newLink = link
                         break
                     else:
                         logger.debug("not found: %s|%s"%(content,element["title"]))
                 i+=1
-        return link
+        return elements,newLink
 
     @staticmethod
     def extractLinks(link):
+        elements = []
         html = requests.get(link, headers=Flipax.headers,cookies=Flipax.session, verify=True).text
         section = Decoder.extract('<div class="postbody"><div class="content"><div><div align="center">','</div></div></div>',html)
         logger.debug("html is: %s"%section)
@@ -69,6 +70,7 @@ class Flipax():
             element["title"] = link
             element["link"] = link
             elements.append(element)
+        return elements
 
     @staticmethod
     def extractSections():
@@ -95,19 +97,30 @@ class Flipax():
     def getSection(section='', content=''):
         elements = []
 
-        if Flipax.session == '' and content != '':
-            Flipax.login()
+        if '/t' in section:
 
-        elements = Flipax.extractSections()
-        if len(section)>0:
-            link = ''
-            for element in elements:
-                logger.debug(element["title"])
-                if element["title"].lower() == section.lower():
-                    link = element["link"]
-                    break
-            if len(link)>0:
-                link2 = Flipax.extractSection(link)
-                if link2 != link:
-                    elements = Flipax.extractLinks(link2)
+            if Flipax.session == '' and content != '':
+                Flipax.login()
+            link = Flipax.MAIN+section+"-"
+            logger.debug("using target link %s " % link)
+            elements = Flipax.extractLinks(link)
+
+        else:
+
+            elements = Flipax.extractSections()
+            if len(section)>0:
+                link = ''
+                for element in elements:
+                    logger.debug(element["title"])
+                    if element["title"].lower() == section.lower():
+                        link = element["link"]
+                        logger.debug("found section, getting link...")
+                        break
+                if len(link)>0:
+                    logger.debug("extracting section content from link %s"%link)
+                    elements,link2 = Flipax.extractSection(link,content)
+                    if link2 != link:
+                        logger.debug("extracting link %s"%link2)
+                        elements = Flipax.extractLinks(link2)
+
         return elements

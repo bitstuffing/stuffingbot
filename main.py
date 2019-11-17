@@ -2,7 +2,6 @@
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
-import base64
 import urllib
 import logging
 import sys
@@ -17,6 +16,7 @@ import os
 import json
 import logger
 from bot.core.config import Config
+from bot.core.decoder import Decoder
 
 config = Config.getConfig()
 
@@ -97,19 +97,18 @@ def buttons(update,context):
 @run_async
 def flipax(update,context):
     message = update.message.text
-
+    logging.debug("message is: '%s'" % message)
     flipax_callback(update,message)
 
 def flipax_callback(update,message):
+    logger.debug("message is: %s" % message)
     params = []
     if " " in message:
         params.append(message[:message.find(" ")-1])
-        if " - " in message[message.find(" ")+1:]:
+        if " - " in message:
             logging.debug("message: %s"%message)
-            section = message[message.find(" ")+1:].split(" - ")[0]
-            content = message[message.find(" ")+1:].split(" - ")[1]
+            section = message[message.find(" - ")+3:]
             params.append(section)
-            params.append(content)
         else:
             params.append(message[message.find(" ")+1:])
     logger.debug(str(params))
@@ -118,12 +117,12 @@ def flipax_callback(update,message):
     keyboard = []
     for entry in entries:
         text = "/flipax"
-        if len(params)<=2:
-            text+=" - "+entry["title"]
-        else: #if len(params)==3:
-            uri = Decoder.extract('.net/','-',entry["url"])
-            text+=" url "+uri
-        logging.debug("calback"+text)
+        if "https://www.flipax.net/f" in entry["link"]:
+            text += " - %s" % entry["title"]
+        else:
+            uri = Decoder.extract('.net','-',entry["link"])
+            text += " %s" % uri
+        logging.debug("callback"+text)
         title = entry["title"]
         logger.debug("button: %s , callback: %s" % (title,text))
         key = [InlineKeyboardButton(text=title,callback_data=text)] #please take into account that callback_data couldn't be higher than 64 characters
@@ -137,6 +136,7 @@ def flipax_callback(update,message):
         #update.callback_query.edit_message_text(text,reply_markup=reply_markup)
         #update.callback_query.edit_message_reply_markup(reply_markup=reply_markup)
         bot.send_message(chat_id=update.callback_query.message.chat.id,text=text,reply_markup=reply_markup)
+        logging.debug("else done!")
 
 @run_async
 def habla(update,context):

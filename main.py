@@ -2,6 +2,7 @@
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
+import base64
 import urllib
 import logging
 import sys
@@ -103,7 +104,8 @@ def flipax_callback(update,message):
     params = []
     if " " in message:
         params.append(message[:message.find(" ")-1])
-        if " - " in message:
+        if " - " in message[message.find(" ")+1:]:
+            logging.debug("message: %s"%message)
             section = message[message.find(" ")+1:].split(" - ")[0]
             content = message[message.find(" ")+1:].split(" - ")[1]
             params.append(section)
@@ -115,13 +117,16 @@ def flipax_callback(update,message):
     entries = Content.getFlipax(params)
     keyboard = []
     for entry in entries:
-        text = message
-        if len(params)==2:
-            text+=" -"
-        if len(params)==3:
-            text="/decode"
-        text += " "+entry["title"]
-        key = [InlineKeyboardButton(text=entry["title"],callback_data=text)]
+        text = "/flipax"
+        if len(params)<=2:
+            text+=" - "+entry["title"]
+        else: #if len(params)==3:
+            uri = Decoder.extract('.net/','-',entry["url"])
+            text+=" url "+uri
+        logging.debug("calback"+text)
+        title = entry["title"]
+        logger.debug("button: %s , callback: %s" % (title,text))
+        key = [InlineKeyboardButton(text=title,callback_data=text)] #please take into account that callback_data couldn't be higher than 64 characters
         keyboard.append(key)
     reply_markup = InlineKeyboardMarkup(keyboard,resize_keyboard=True)
     text = 'please select an option from command %s'%message
@@ -129,7 +134,9 @@ def flipax_callback(update,message):
     if 'reply_text' in dir(update.message):
         update.message.reply_text(text,reply_markup=reply_markup,parse_mode=telegram.ParseMode.HTML)
     else:
-        update.callback_query.edit_message_text(text,reply_markup=reply_markup,parse_mode=telegram.ParseMode.HTML)
+        #update.callback_query.edit_message_text(text,reply_markup=reply_markup)
+        #update.callback_query.edit_message_reply_markup(reply_markup=reply_markup)
+        bot.send_message(chat_id=update.callback_query.message.chat.id,text=text,reply_markup=reply_markup)
 
 @run_async
 def habla(update,context):

@@ -104,6 +104,9 @@ def buttons(update,context):
             flipax_callback(update,query)
         elif "/decode" in queries[0]:
             decode_callback(update,queries)
+        elif "/echo" in queries[0]:
+            text = queries[1]
+            bot.send_message(chat_id=update.callback_query.message.chat.id,text=text)
 
 @run_async
 def flipax(update,context):
@@ -132,7 +135,7 @@ def flipax_callback(update,message):
         if "https://www.flipax.net/f" in entry["link"]:
             text += " - %s" % entry["title"]
         elif "flipax.net" not in entry["link"]:
-            text = "/decode %s" % entry["link"]
+            text = "/echo %s" % entry["link"]
         else:
             uri = Decoder.extract('.net','-',entry["link"])
             text += " %s" % uri
